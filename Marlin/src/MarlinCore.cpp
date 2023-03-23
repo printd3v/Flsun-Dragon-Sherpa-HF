@@ -884,10 +884,6 @@ inline void tmc_standby_setup() {
  */
 void setup() {
 
-  #ifdef FASTIO_INIT
-    FASTIO_INIT();
-  #endif
-
   tmc_standby_setup();  // TMC Low Power Standby pins must be set early or they're not usable
 
   #if ENABLED(MARLIN_DEV_MODE)
@@ -1274,11 +1270,44 @@ void setup() {
 
   SETUP_LOG("setup() completed.");
 
-  setFLSunLanguage(Flsun_language);
-  setFLSunHours(total_time);
+  if(Flsun_language == 1)//英语 新增
+  {
+    change_en();
+  }
+  else if(Flsun_language == 2)//中文简体
+  {
+    change_zh_CN();
+  }
+  else if(Flsun_language == 3)//中文繁体
+  {
+    change_zh_TW();
+  }
+  else if(Flsun_language == 4)//俄语
+  {
+    change_ru();
+  }
+  else if(Flsun_language == 5)//法语
+  {
+    change_fr();
+  }
+  else if(Flsun_language == 6)//西班牙语
+  {
+    change_es();
+  }
+  else if(Flsun_language == 7)//德语
+  {
+    change_de();
+  }
+  else if(Flsun_language == 8)//日语
+  {
+    change_jp();
+  }
+  char cmd[5] = {0};//新增
+  sprintf_P(cmd,"%ld",total_time/60);
+  print_thr_adress_string(0x17,0x00,cmd);
   print_thr_adress_string(0x13,0x40,"V1.3");//显示版本号
   print_thr_adress_string(0x13,0x30,"Marlin 2.0.8");//显示版本号
-  if(recovery.exists())//新增
+  if(recovery.exists() && recovery.enabled)//新增
   {
     jump_to(04);
     my_print_state = PAUSING;//暂停
@@ -1287,7 +1316,6 @@ void setup() {
   {
     jump_to(01);
   }
-
   if(buzzer_flag)
   {
     enable_buzzer();
@@ -1296,47 +1324,8 @@ void setup() {
   {
     disable_buzzer();
   }
-}
-
-void setFLSunHours(const millis_t time) {
-  char cmd[5] = {0};//新增
-  sprintf_P(cmd,"%ld",time/60);
-  print_thr_adress_string(0x17,0x00,cmd);
-}
-
-void setFLSunLanguage(const uint16_t lang) {
-  if(lang == 1)//英语 新增
-  {
-    change_en();
-  }
-  else if(lang == 2)//中文简体
-  {
-    change_zh_CN();
-  }
-  else if(lang == 3)//中文繁体
-  {
-    change_zh_TW();
-  }
-  else if(lang == 4)//俄语
-  {
-    change_ru();
-  }
-  else if(lang == 5)//法语
-  {
-    change_fr();
-  }
-  else if(lang == 6)//西班牙语
-  {
-    change_es();
-  }
-  else if(lang == 7)//德语
-  {
-    change_de();
-  }
-  else if(lang == 8)//日语
-  {
-    change_jp();
-  }
+  
+  
 }
 
 /**

@@ -336,6 +336,10 @@ const char str_t_thermal_runaway[] PROGMEM = STR_T_THERMAL_RUNAWAY,
 
 // private:
 
+#if EARLY_WATCHDOG
+  bool Temperature::inited = false;
+#endif
+
 #if ENABLED(TEMP_SENSOR_1_AS_REDUNDANT)
   uint16_t Temperature::redundant_temperature_raw = 0;
   float Temperature::redundant_temperature = 0.0;
@@ -1086,7 +1090,10 @@ void Temperature::min_temp_error(const heater_id_t heater_id) {
  */
 void Temperature::manage_heater() {
 
-  if (marlin_state == MF_INITIALIZING) return watchdog_refresh(); // If Marlin isn't started, at least reset the watchdog!
+  #if EARLY_WATCHDOG
+    // If thermal manager is still not running, make sure to at least reset the watchdog!
+    if (!inited) return watchdog_refresh();
+  #endif
 
   #if ENABLED(EMERGENCY_PARSER)
     if (emergency_parser.killed_by_M112) kill(M112_KILL_STR, nullptr, true);
@@ -1737,6 +1744,12 @@ void Temperature::init() {
   TERN_(MAX6675_0_IS_MAX31865, max31865_0.begin(MAX31865_2WIRE)); // MAX31865_2WIRE, MAX31865_3WIRE, MAX31865_4WIRE
   TERN_(MAX6675_1_IS_MAX31865, max31865_1.begin(MAX31865_2WIRE));
 
+  #if EARLY_WATCHDOG
+    // Flag that the thermalManager should be running
+    if (inited) return;
+    inited = true;
+  #endif
+
   #if MB(RUMBA)
     // Disable RUMBA JTAG in case the thermocouple extension is plugged on top of JTAG connector
     #define _AD(N) (HEATER_##N##_USES_AD595 || HEATER_##N##_USES_AD8495)
@@ -1922,7 +1935,7 @@ void Temperature::init() {
   #endif
 
   // Wait for temperature measurement to settle
-  //delay(250);
+  delay(250);
 
   #if HAS_HOTEND
 
